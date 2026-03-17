@@ -1,11 +1,12 @@
 import os
-from bs4 import BeautifulSoup # for HTML parsing
+from bs4 import BeautifulSoup
 from rag.indexer import Indexer
+from rag.manifest import Manifest
 
 
 def _get_id(filepath: str) -> str:
     """
-    Generates a document ID from a filename (replace w/ smarter file name scheme later)
+    Generates a document ID from a filename (replace w/ smarter scheme later)
     e.g. "test.html" -> "test"
     """
     return os.path.splitext(os.path.basename(filepath))[0]
@@ -30,10 +31,6 @@ def preview_folder(folder: str, collection: str, extension: str = ".html"):
     """
     Scans a folder and prints a preview of what would be ingested.
     Does NOT write anything to the database.
-
-    folder:     path to the folder to scan
-    collection: "quests" or "lore"
-    extension:  file type to look for, defaults to .html
     """
     files = _scan_folder(folder, extension)
 
@@ -45,19 +42,29 @@ def preview_folder(folder: str, collection: str, extension: str = ".html"):
     for filepath in files:
         doc_id = _get_id(filepath)
         text = _read_html(filepath)
-        preview = text[:200].replace("\n", " ")  # first 200 chars as preview
+        preview = text[:200].replace("\n", " ")
         print(f"  ID:      {doc_id}")
         print(f"  Preview: {preview}...")
         print()
 
 
-def ingest_folder(folder: str, collection: str, indexer: Indexer, extension: str = ".html"):
+def ingest_folder(
+    folder: str,
+    collection: str,
+    indexer: Indexer,
+    manifest: Manifest,
+    force: bool = False,
+    extension: str = ".html"
+):
     """
-    Scans a folder, previews the files, asks for confirmation, then ingests.
+    Ingests files from a folder into the database.
+    Skips files already recorded in the manifest unless force=True.
 
     folder:     path to the folder to scan
     collection: "quests" or "lore"
     indexer:    Indexer instance to write with
+    manifest:   Manifest instance to check and update
+    force:      if True, re-ingests files already in the manifest
     extension:  file type to look for, defaults to .html
     """
     files = _scan_folder(folder, extension)
@@ -66,19 +73,39 @@ def ingest_folder(folder: str, collection: str, indexer: Indexer, extension: str
         print(f"No {extension} files found in: {folder}")
         return
 
-    # preview first
-    preview_folder(folder, collection, extension)
+    new_files    = []
+    skipped      = []
 
-    # ingest
-    docs = []
     for filepath in files:
-        doc_id = _get_id(filepath)
-        text = _read_html(filepath)
+        filename = os.path.basename(filepath)
+        if not force and manifest.is_ingested(filename):
+            skipped.append(filename)
+        else:
+            new_files.append(filepath)
+
+    # report what will be skipped
+    if skipped:
+        print(f"Skipping {len(skipped)} already ingested file(s):")
+        for f in skipped:
+            print(f"  {f}")
+        print()
+
+    if not new_files:
+        print("Nothing new to ingest.")
+        return
+
+    # ingest new files
+    docs = []
+    for filepath in new_files:
+        doc_id   = _get_id(filepath)
+        text     = _read_html(filepath)
+        filename = os.path.basename(filepath)
         docs.append({
-            "id": doc_id,
-            "text": text,
-            "metadata": {"source": os.path.basename(filepath)}
+            "id":       doc_id,
+            "text":     text,
+            "metadata": {"source": filename}
         })
+        manifest.record(filename, collection)
 
     indexer.add_bulk(collection, docs)
-    print(f"\nIngested {len(docs)} file(s) into '{collection}'. DB is stable.")
+    print(f"Ingested {len(docs)} new file(s) into '{collection}'. DB is stable.")

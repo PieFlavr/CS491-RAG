@@ -19,6 +19,12 @@ Currently this uses the following...
 pip list --format=freeze > requirements.txt
 ```
 
+When installing via Anaconda, make sure to install `chromadb` via `pip` and NOT Anaconda's package manager. Otherwise it will return pydantic errors.
+
+```bash
+pip install chromadb
+```
+
 ## TODO
 
 - []

@@ -3,7 +3,7 @@ from rag.indexer import Indexer
 from rag.retriever import Retriever
 from rag.manifest import Manifest
 from rag.loader import ingest_folder, preview_folder
-
+from rag.rag_config import RAGConfig
 
 class RAGAPI:
     """
@@ -16,10 +16,18 @@ class RAGAPI:
     """
 
     def __init__(self, persist_dir: str = "./data/chroma_db"):
+        """
+        Initializes the RAGAPI with a ChromaStore.
+
+        Args:
+            persist_dir (str, optional): _description_. Defaults to "./data/chroma_db".
+        """        
         self.store    = ChromaStore(persist_dir=persist_dir)
         self.indexer  = Indexer(self.store)
         self.retriever = Retriever(self.store)
         self.manifest = Manifest(chroma_dir=persist_dir)
+        self.config = RAGConfig()   # It is IMPERATIVE to manually load actual user config with load_config() before using subsystems!
+                                    # Currently this ONLY loads defaults -L
 
     def add_raw(self, collection: str, id: str, text: str, metadata: dict = {}):
         self.indexer.add_raw(collection, id, text, metadata)
@@ -46,6 +54,8 @@ class RAGAPI:
         """
         return self.retriever.query(query, n_per_collection)
 
+    # region Manifest Management
+
     def show_manifest(self):
         """Prints everything currently recorded in the manifest."""
         data = self.manifest.all()
@@ -65,3 +75,25 @@ class RAGAPI:
         """Clears the manifest so all files will be re-ingested on next run."""
         self.manifest.clear()
         print("Manifest cleared.")
+
+    # endregion Manifest Management
+
+    # region Configuration 
+
+    def load_config(self, path: str = "rag_config.json", _debug_load_defaults: bool = False):
+        """_summary_
+        Loads the RAGConfig from a JSON file and applies it to the subsystems.
+        
+        Args:
+            path (str, optional): The path to the JSON file to load from. Defaults to "rag_config.json".
+            _debug_load_defaults (bool, optional): Whether to load default values for debugging. Defaults to False.
+                                                    Purely for clean-slate testing w/o saved configurations interfering.
+        """        
+
+       
+
+
+
+
+    # endregion Configuration
+    

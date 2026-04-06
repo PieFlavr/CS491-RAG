@@ -7,17 +7,18 @@ class Retriever:
     a ranked list of relevant results for a given query.
     """
 
-    def __init__(self, store: ChromaStore, config = None):
+    def __init__(self, store: ChromaStore, config: RetrieverConfig | None = None, config_dir: str = "retriever_config.json"):
         """_summary_
         Initializes the Retriever with a ChromaStore instance and an optional configuration.
         
         Args:
             store (ChromaStore): An instance of the ChromaStore class to query against.
             config (_type_, optional): Configuration settings for the Retriever. Defaults to None, which will load default settings from RetrieverConfig.
+            config_dir (str, optional): The directory where the configuration file is located. Defaults to "retriever_config.json".
         """        
         self.store = store
         if config is None: 
-            config = RetrieverConfig()
+            config = RetrieverConfig.load(config_dir) 
         self.config = config
 
     def query(self, query: str, n_per_collection: int | None = None, score_threshold: float | None = None) -> list[dict]:

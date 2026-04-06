@@ -31,9 +31,9 @@ class ChromaStore:
             )
             for name in COLLECTIONS
         }
-        
+
         if config is None:
-            self.load_config(config_dir)
+            config = ChromaConfig.load(config_dir)
         else:
             self.config = config
 
@@ -77,26 +77,3 @@ class ChromaStore:
 
     def count(self, collection: str) -> int:
         return self.collections[collection].count()
-    
-    # region Configuration
-
-    def load_config(self, path: str = "chroma_config.json"):
-        """_summary_
-        Loads configuration settings from a JSON file and applies them to the ChromaStore instance.
-
-        Args:
-            path (str, optional): The path to the JSON configuration file. Defaults to "chroma_config.json".
-        """        
-        config = ChromaConfig.load(path)
-
-    def save_config(self, path: str = "chroma_config.json"):
-        """_summary_
-        Saves the current configuration settings of the ChromaStore instance to a JSON file.
-
-        Args:
-            path (str, optional): The path to the JSON configuration file. Defaults to "chroma_config.json".
-        """        
-        config = ChromaConfig()
-        config.save(path)
-       
-    # endregion Configuration

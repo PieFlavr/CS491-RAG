@@ -42,9 +42,10 @@ class ChromaConfig(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        json_file            = "chroma_config.json",
-        json_file_encoding   = "utf-8",
-        extra                = "ignore",
+        json_file           = "chroma_config.json",
+        json_file_encoding  = "utf-8",
+        extra               = "ignore",
+        frozen              = False,
     )
 
     persist_dir:     str       = "data/chroma_db"
@@ -87,9 +88,10 @@ class RetrieverConfig(BaseSettings):
     """    
 
     model_config = SettingsConfigDict(
-        json_file            = "retriever_config.json",
-        json_file_encoding   = "utf-8",
-        extra                = "ignore",
+        json_file           = "retriever_config.json",
+        json_file_encoding  = "utf-8",
+        extra               = "ignore",
+        frozen              = False,
     )
 
     score_threshold:  float = 0.3
@@ -122,12 +124,15 @@ class LoaderConfig(BaseSettings):
     """_summary_
     Subconfigurator for the file ingestion pipeline (loader.py)
     Inherits from pydantic BaseSettings class.
+
+    Since loader isn't a 'class', is instead dependecy-injected in the funcitons.
     """    
 
     model_config = SettingsConfigDict(
-        json_file            = "loader_config.json",
-        json_file_encoding   = "utf-8",
-        extra                = "ignore",
+        json_file           = "loader_config.json",
+        json_file_encoding  = "utf-8",
+        extra               = "ignore",
+        frozen              = False,
     )
 
     default_extension: str = ".html"
@@ -183,6 +188,7 @@ class RAGConfig(BaseSettings):
 
     model_config = SettingsConfigDict(
         extra                = "ignore",
+        frozen               = False,
     )
 
     # Sub-configs as fields. On a plain `RAGConfig()` call these just use their

@@ -6,7 +6,7 @@ from rag.rag_config import ChromaConfig
 COLLECTIONS = ["quests", "lore"]
 
 class ChromaStore:
-    def __init__(self, persist_dir: str = "../data/chroma_db", config_dir: str = "chroma_config.json", config: ChromaConfig | None = None):
+    def __init__(self, persist_dir: str = "../data/chroma_db", config: ChromaConfig | None = None, config_dir: str = "chroma_config.json"):
         """_summary_
             Initializes the ChromaStore with a persistent ChromaDB client and sets up collections and embedding functions.
 
@@ -31,6 +31,7 @@ class ChromaStore:
             )
             for name in COLLECTIONS
         }
+        
         if config is None:
             self.load_config(config_dir)
         else:

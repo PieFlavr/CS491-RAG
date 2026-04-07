@@ -223,15 +223,11 @@ class RAGConfig(BaseSettings):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        # modify sub-config class json locations so if non-deault doesn't break
-        ChromaConfig.model_config["json_file"] = cls.chroma_config_path
-        RetrieverConfig.model_config["json_file"] = cls.retriever_config_path
-        LoaderConfig.model_config["json_file"] = cls.loader_config_path
+        instance = cls()
 
-
-        chroma = ChromaConfig.load(path=cls.chroma_config_path, _data=data.get("chroma", {}))
-        retriever = RetrieverConfig.load(path=cls.retriever_config_path, _data=data.get("retriever", {}))
-        loader = LoaderConfig.load(path=cls.loader_config_path, _data=data.get("loader", {}))
+        chroma = ChromaConfig.load(path=instance.chroma_config_path, _data=data.get("chroma", {}))
+        retriever = RetrieverConfig.load(path=instance.retriever_config_path, _data=data.get("retriever", {}))
+        loader = LoaderConfig.load(path=instance.loader_config_path, _data=data.get("loader", {}))
 
         return cls(chroma=chroma, retriever=retriever, loader=loader)
 
@@ -244,6 +240,12 @@ class RAGConfig(BaseSettings):
             path (str, optional): The path to the JSON file to save to. Defaults to MASTER_CONFIG_PATH.
         """        
         data = {
+            # config locations
+            "chroma_config_path": self.chroma_config_path,
+            "retriever_config_path": self.retriever_config_path,
+            "loader_config_path": self.loader_config_path,
+
+            # config data
             "chroma":    self.chroma.model_dump(mode="json"),
             "retriever": self.retriever.model_dump(mode="json"),
             "loader":    self.loader.model_dump(mode="json"),

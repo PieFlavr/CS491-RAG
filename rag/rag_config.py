@@ -197,6 +197,11 @@ class RAGConfig(BaseSettings):
     retriever: RetrieverConfig = RetrieverConfig()
     loader:    LoaderConfig    = LoaderConfig()
 
+    chroma_config_path: str = "chroma_config.json" 
+    retriever_config_path: str = "retriever_config.json"  
+    loader_config_path: str = "loader_config.json"
+
+
     @classmethod
     def load(cls, path: str = MASTER_CONFIG_PATH) -> "RAGConfig":
         """_summary_
@@ -218,11 +223,17 @@ class RAGConfig(BaseSettings):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        return cls(
-            chroma    = ChromaConfig.load(_data=data.get("chroma", {})),
-            retriever = RetrieverConfig.load(_data=data.get("retriever", {})),
-            loader    = LoaderConfig.load(_data=data.get("loader", {})),
-        )
+        # modify sub-config class json locations so if non-deault doesn't break
+        ChromaConfig.model_config["json_file"] = cls.chroma_config_path
+        RetrieverConfig.model_config["json_file"] = cls.retriever_config_path
+        LoaderConfig.model_config["json_file"] = cls.loader_config_path
+
+
+        chroma = ChromaConfig.load(path=cls.chroma_config_path, _data=data.get("chroma", {}))
+        retriever = RetrieverConfig.load(path=cls.retriever_config_path, _data=data.get("retriever", {}))
+        loader = LoaderConfig.load(path=cls.loader_config_path, _data=data.get("loader", {}))
+
+        return cls(chroma=chroma, retriever=retriever, loader=loader)
 
     def save(self, path: str = MASTER_CONFIG_PATH):
         """_summary_

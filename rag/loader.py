@@ -2,7 +2,7 @@ import os
 from bs4 import BeautifulSoup
 from rag.indexer import Indexer
 from rag.manifest import Manifest
-from rag_config import LoaderConfig
+from rag.rag_config import LoaderConfig
 
 
 def _get_id(filepath: str, config: LoaderConfig | None = None) -> str:

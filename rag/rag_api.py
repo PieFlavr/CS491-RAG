@@ -3,7 +3,7 @@ from rag.indexer import Indexer
 from rag.retriever import Retriever
 from rag.manifest import Manifest
 from rag.loader import ingest_folder, preview_folder
-
+from rag.rag_config import RAGConfig
 
 class RAGAPI:
     """
@@ -15,10 +15,22 @@ class RAGAPI:
         results = rag.query("what is Ashenvale?")
     """
 
-    def __init__(self, persist_dir: str = "./data/chroma_db"):
-        self.store    = ChromaStore(persist_dir=persist_dir)
+    def __init__(self, persist_dir: str = "./data/chroma_db", 
+                 config: RAGConfig | None = None,
+                 config_dir: str = "rag_config.json"):
+        """
+        Initializes the RAGAPI with a ChromaStore.
+
+        Args:
+            persist_dir (str, optional): The directory to persist the Chroma database. Defaults to "./data/chroma_db".
+            config_dir (str, optional): The path to the configuration file. Defaults to "rag_config.json".
+            config (RAGConfig | None, optional): The RAG configuration. Defaults to None.
+        """       
+        self.config = RAGConfig.load(config_dir) if config is None else config
+
+        self.store    = ChromaStore(persist_dir=persist_dir, config=self.config.chroma)
         self.indexer  = Indexer(self.store)
-        self.retriever = Retriever(self.store)
+        self.retriever = Retriever(self.store, config=self.config.retriever)
         self.manifest = Manifest(chroma_dir=persist_dir)
 
     def add_raw(self, collection: str, id: str, text: str, metadata: dict = {}):
@@ -46,6 +58,8 @@ class RAGAPI:
         """
         return self.retriever.query(query, n_per_collection)
 
+    # region Manifest Management
+
     def show_manifest(self):
         """Prints everything currently recorded in the manifest."""
         data = self.manifest.all()
@@ -65,3 +79,5 @@ class RAGAPI:
         """Clears the manifest so all files will be re-ingested on next run."""
         self.manifest.clear()
         print("Manifest cleared.")
+
+    # endregion Manifest Management

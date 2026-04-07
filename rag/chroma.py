@@ -1,10 +1,21 @@
 import chromadb
 from chromadb.utils import embedding_functions
+from rag import rag_config
+from rag.rag_config import ChromaConfig
 
 COLLECTIONS = ["quests", "lore"]
 
 class ChromaStore:
-    def __init__(self, persist_dir: str = "../data/chroma_db"):
+    def __init__(self, persist_dir: str = "../data/chroma_db", config: ChromaConfig | None = None, config_dir: str = "chroma_config.json"):
+        """_summary_
+            Initializes the ChromaStore with a persistent ChromaDB client and sets up collections and embedding functions.
+
+        Args:
+            persist_dir (str, optional): The directory where the ChromaDB is persisted. Defaults to "../data/chroma_db".
+            config_dir (str, optional): The path to the JSON configuration file. Defaults to "chroma_config.json".
+            config (ChromaConfig, optional): The configuration settings for the ChromaStore. Defaults to None.
+                                                If None, constructs a new ChromaConfig instance by loading from config_dir.
+        """        
         self.client = chromadb.PersistentClient(path=persist_dir)
 
         self.embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -20,6 +31,11 @@ class ChromaStore:
             )
             for name in COLLECTIONS
         }
+
+        if config is None:
+            config = ChromaConfig.load(config_dir)
+        else:
+            self.config = config
 
     def add(self, collection: str, docs: list[dict]):
         if collection not in self.collections:

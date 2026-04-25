@@ -1,9 +1,9 @@
 import chromadb
 from chromadb.utils import embedding_functions
-from rag import rag_config
 from rag.rag_config import ChromaConfig
 
 COLLECTIONS = ["quests", "lore"]
+RAG_DEVICE = "cpu"
 
 class ChromaStore:
     def __init__(self, persist_dir: str = "../data/chroma_db", config: ChromaConfig | None = None, config_dir: str = "chroma_config.json"):
@@ -18,24 +18,25 @@ class ChromaStore:
         """        
         self.client = chromadb.PersistentClient(path=persist_dir)
 
+        if config is None:
+            config = ChromaConfig.load(config_dir)
+        else:
+            self.config = config
+
+        # Use embedding model from config instead of hardcoding ##--------------------
         self.embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
+        model_name=config.embedding_model,
+        device=RAG_DEVICE
         )
 
         self.collections = {
             name: self.client.get_or_create_collection(
                 name=name,
-                embedding_function = self.embed_fn, # type: ignore
-                # the type checking is just overly strict i guess? works regardless
+                embedding_function=self.embed_fn,  # type: ignore
                 metadata={"hnsw:space": "cosine"},
             )
             for name in COLLECTIONS
         }
-
-        if config is None:
-            config = ChromaConfig.load(config_dir)
-        else:
-            self.config = config
 
     def add(self, collection: str, docs: list[dict]):
         if collection not in self.collections:
@@ -48,7 +49,7 @@ class ChromaStore:
             metadatas=[d.get("metadata", {}) for d in docs],
         )
 
-    def query(self, collection: str, text: str, n: int = 5, filters: dict = None) -> list[dict]: # type: ignore
+    def query(self, collection: str, text: str, n: int = 5, filters: dict = None) -> list[dict]:  # type: ignore
         if collection not in self.collections:
             raise ValueError(f"Unknown collection '{collection}'. Choose from: {COLLECTIONS}")
 
@@ -65,11 +66,11 @@ class ChromaStore:
 
         return [
             {
-                "text": raw["documents"][0][i], # type: ignore
-                "metadata": raw["metadatas"][0][i], # type: ignore
-                "score": 1 - raw["distances"][0][i], # type: ignore
+                "text": raw["documents"][0][i],  # type: ignore
+                "metadata": raw["metadatas"][0][i],  # type: ignore
+                "score": 1 - raw["distances"][0][i],  # type: ignore
             }
-            for i in range(len(raw["documents"][0])) # type: ignore
+            for i in range(len(raw["documents"][0]))  # type: ignore
         ]
 
     def delete(self, collection: str, ids: list[str]):

@@ -22,6 +22,14 @@ def _get_id(filepath: str, config: LoaderConfig | None = None) -> str:
 def _read_json(filepath: str, encoding: str = "utf-8", config: LoaderConfig | None = None):
     """_summary_
         Reads a JSON file and returns the loaded data.
+
+    Args:
+        filepath (str): The path to the JSON file to read.
+        encoding (str, optional): The file encoding to use when reading the JSON file. Defaults to "utf-8".
+        config (LoaderConfig | None, optional): If not None, overrides default encoding with config values. Defaults to None.
+
+    Returns:
+        Any: The parsed JSON data.
     """
     if config is not None:
         encoding = config.encoding
@@ -33,6 +41,14 @@ def _read_json(filepath: str, encoding: str = "utf-8", config: LoaderConfig | No
 def _scan_folder(folder: str, extension: str = ".json", config: LoaderConfig | None = None) -> list[str]:
     """_summary_
         Scans a folder and returns a list of file paths with the specified extension.
+
+    Args:
+        folder (str): The path to the folder to scan.
+        extension (str, optional): The file extension to look for. Defaults to ".json".
+        config (LoaderConfig | None, optional): If not None, overrides default extension with config.default_extension. Defaults to None.
+
+    Returns:
+        list[str]: A list of file paths with the specified extension found in the folder.
     """
 
     if config is not None:
@@ -49,6 +65,17 @@ def _scan_folder(folder: str, extension: str = ".json", config: LoaderConfig | N
 
 
 def _safe_metadata_value(value):
+    """_summary_
+        Coerces a value into a Chroma-safe metadata string.
+        None becomes an empty string, lists and dicts are JSON-serialised,
+        and everything else is cast to str.
+
+    Args:
+        value: The raw metadata value to sanitise.
+
+    Returns:
+        str: A Chroma-compatible string representation of the value.
+    """
     if value is None:
         return ""
     if isinstance(value, list):
@@ -61,13 +88,33 @@ def _safe_metadata_value(value):
 
 
 def _clean_text(value):
+    """_summary_
+        Normalises a value to a lowercase, stripped string for fuzzy matching.
+        None becomes an empty string.
+
+    Args:
+        value: The value to normalise.
+
+    Returns:
+        str: The lowercased and whitespace-stripped string representation.
+    """
     if value is None:
         return ""
     return str(value).strip().lower()
 
 
 def _load_coordinates(folder: str, config: LoaderConfig | None = None) -> list:
-    """Loads clean_json_coord.txt as a list of coordinate entries."""
+    """_summary_
+        Loads the coordinate reference file (clean_json_coord.txt) from the given folder
+        and returns its contents as a list of coordinate entries.
+
+    Args:
+        folder (str): The path to the folder containing clean_json_coord.txt.
+        config (LoaderConfig | None, optional): If not None, passed through to _read_json for encoding overrides. Defaults to None.
+
+    Returns:
+        list: A list of coordinate entry dicts, or an empty list if the file is missing or malformed.
+    """
 
     coord_path = os.path.join(folder, COORD_FILE_NAME)
 
@@ -85,7 +132,19 @@ def _load_coordinates(folder: str, config: LoaderConfig | None = None) -> list:
 
 
 def _find_coordinate_for_quest(quest_name: str, quest_data: dict, coord_data: list) -> dict:
-    """Finds the best coordinate reference for a quest."""
+    """_summary_
+        Finds the best matching coordinate entry for a given quest by trying three
+        strategies in order: exact name match, coord name appearing in the walkthrough,
+        and quest name appearing in the coord description.
+
+    Args:
+        quest_name (str): The name of the quest to match.
+        quest_data (dict): The quest data dict, expected to contain a "Walkthrough" key.
+        coord_data (list): The list of coordinate entry dicts loaded from clean_json_coord.txt.
+
+    Returns:
+        dict: The best matching coordinate entry, or an empty dict if no match is found.
+    """
 
     walkthrough = quest_data.get("Walkthrough", "")
     quest_name_clean = _clean_text(quest_name)
@@ -116,7 +175,18 @@ def _find_coordinate_for_quest(quest_name: str, quest_data: dict, coord_data: li
 
 
 def _build_quest_text(quest_name: str, quest_data: dict) -> str:
-    """Builds searchable document text from one quest entry."""
+    """_summary_
+        Builds the searchable document text for a single quest entry,
+        combining the quest name, objectives, and walkthrough into a
+        structured, newline-separated string.
+
+    Args:
+        quest_name (str): The name of the quest.
+        quest_data (dict): The quest data dict, expected to contain "Objectives" and "Walkthrough" keys.
+
+    Returns:
+        str: The formatted document text to be indexed.
+    """
 
     walkthrough = quest_data.get("Walkthrough", "")
     objectives = quest_data.get("Objectives", {})
@@ -135,7 +205,19 @@ def _build_quest_text(quest_name: str, quest_data: dict) -> str:
 
 
 def _build_quest_metadata(filename: str, quest_name: str, quest_data: dict, coord_data: list) -> dict:
-    """Builds metadata for Chroma from quest data and coordinate lookup."""
+    """_summary_
+        Builds the Chroma metadata dict for a single quest entry, including source file,
+        quest name, walkthrough, and any coordinate fields resolved via _find_coordinate_for_quest.
+
+    Args:
+        filename (str): The source filename to record in metadata.
+        quest_name (str): The name of the quest.
+        quest_data (dict): The quest data dict, expected to contain a "Walkthrough" key.
+        coord_data (list): The list of coordinate entry dicts loaded from clean_json_coord.txt.
+
+    Returns:
+        dict: A flat dict of Chroma-safe metadata strings for the quest.
+    """
 
     walkthrough = quest_data.get("Walkthrough", "")
     matched_coord = _find_coordinate_for_quest(quest_name, quest_data, coord_data)
@@ -199,9 +281,19 @@ def ingest_folder(
     config: LoaderConfig | None = None
 ):
     """_summary_
-        Ingests JSON quest files from a folder into a specified collection.
-        Uses clean_json_coord.txt in the same folder to attach coordinates.
-        Skips files that have already been ingested unless force=True.
+        Ingests JSON quest files from a folder into a specified collection, using the provided
+        indexer and manifest to track ingested files. Uses clean_json_coord.txt in the same
+        folder to attach coordinates to each quest. Skips files that have already been ingested
+        unless force=True.
+
+    Args:
+        folder (str): The path to the folder containing JSON quest files to ingest.
+        collection (str): The name of the collection into which to ingest the quests.
+        indexer (Indexer): The indexer instance to use for writing the documents.
+        manifest (Manifest, optional): The manifest instance to check and update. Defaults to Manifest().
+        force (bool, optional): If True, re-ingests files already in the manifest. Defaults to False.
+        extension (str, optional): The file extension to look for. Defaults to ".json".
+        config (LoaderConfig | None, optional): The loader config instance to use for loading files. Defaults to None.
     """
 
     files = _scan_folder(folder, extension, config)

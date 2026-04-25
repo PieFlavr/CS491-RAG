@@ -107,7 +107,7 @@ class RetrieverConfig(BaseSettings):
             _data (dict, optional): A dictionary containing configuration values to initialize the instance with. Defaults to {}.
 
         Returns:
-            RetrieverConfig: _description_
+            RetrieverConfig: A populated configuration object created from the provided data or JSON file.
         """        
         if _data:
             return cls(**_data)

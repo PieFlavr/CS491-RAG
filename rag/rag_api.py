@@ -1,9 +1,9 @@
-from rag.chroma import ChromaStore
-from rag.indexer import Indexer
-from rag.retriever import Retriever
-from rag.manifest import Manifest
-from rag.loader import ingest_folder, preview_folder
-from rag.rag_config import RAGConfig
+from .chroma import ChromaStore
+from .indexer import Indexer
+from .retriever import Retriever
+from .manifest import Manifest
+from .loader import ingest_folder, preview_folder
+from .rag_config import RAGConfig
 
 class RAGAPI:
     """

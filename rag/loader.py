@@ -1,8 +1,8 @@
 import os
 import json
-from rag.indexer import Indexer
-from rag.manifest import Manifest
-from rag.rag_config import LoaderConfig
+from .indexer import Indexer
+from .manifest import Manifest
+from .rag_config import LoaderConfig
 
 
 COORD_FILE_NAME = "clean_json_coord.txt"

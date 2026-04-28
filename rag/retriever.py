@@ -1,5 +1,5 @@
-from rag.chroma import ChromaStore
-from rag.rag_config import RetrieverConfig
+from .chroma import ChromaStore
+from .rag_config import RetrieverConfig
 
 class Retriever:
     """

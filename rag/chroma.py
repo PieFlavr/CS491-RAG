@@ -1,6 +1,6 @@
 import chromadb
 from chromadb.utils import embedding_functions
-from rag.rag_config import ChromaConfig
+from .rag_config import ChromaConfig
 
 COLLECTIONS = ["quests", "lore"]
 RAG_DEVICE = "cpu"

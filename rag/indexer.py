@@ -1,4 +1,4 @@
-from rag.chroma import ChromaStore
+from .chroma import ChromaStore
 
 
 class Indexer:
